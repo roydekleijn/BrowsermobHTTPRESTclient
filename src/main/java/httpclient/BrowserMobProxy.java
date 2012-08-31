@@ -2,11 +2,13 @@
  * 
  */
 package httpclient;
-
 import java.io.IOException;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+
+import org.browsermob.core.har.Har;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
@@ -26,6 +28,8 @@ public class BrowserMobProxy {
 
 	/** The data. */
 	private String data;
+	
+	ObjectMapper mapper;
 
 	/**
 	 * Instantiates a new browser mob proxy.
@@ -78,6 +82,7 @@ public class BrowserMobProxy {
 	public int getPortUsingUpstreamProxy(String upStreamProxyServer) {
 		ClientResponse response = service.queryParam("httpProxy",
 				upStreamProxyServer).post(ClientResponse.class);
+		System.out.println(response.getEntity(String.class));
 		int port = Integer.parseInt(response.getEntity(String.class).substring(
 				8, 12));
 		return port;
@@ -155,11 +160,11 @@ public class BrowserMobProxy {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public String getHar(int port) throws IOException {
+	public Har getHar(int port) throws IOException {
 		ClientResponse response = service.path(Integer.toString(port))
 				.path("har").accept(MediaType.APPLICATION_JSON)
 				.get(ClientResponse.class);
-		return response.getEntity(String.class);
+		return mapper.readValue(response.getEntity(String.class), Har.class);
 	}
 
 	/**
