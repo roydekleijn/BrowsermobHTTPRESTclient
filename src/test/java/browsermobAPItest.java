@@ -1,4 +1,8 @@
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
 import java.io.IOException;
+import java.util.Random;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -16,63 +20,65 @@ public class browsermobAPItest {
 	}
 
 	public void createNewProxy() {
-		System.out.println(proxy.getPort());
+		assertThat(proxy.getPort(), is(Integer.class));
 	}
 
 	public void createNewProxyGivenPort() {
-		System.out.println(proxy.getPort(9909));
+		Random random = new Random();
+		int randomInt = random.nextInt(9999) + 1000;
+		assertThat(proxy.getPort(randomInt), is(Integer.class));
 	}
 	
 	public void createNewHar() throws IOException, InterruptedException {
 		int port = proxy.getPort();
-		System.out.println(proxy.createNewHar(port, "new HAR"));
+		assertThat(proxy.createNewHar(port, "new HAR"), is(true));
 	}
 	
 	public void createNewPageRef() {
 		int port = proxy.getPort();
 		proxy.createNewHar(port, "new HAR");
-		System.out.println(proxy.startNewPage(port, "new pagereference"));
+		assertThat(proxy.startNewPage(port, "new pagereference"), is(true));
 	}
 	
 	public void shutDownProxy() {
 		int port = proxy.getPort();
-		System.out.println(proxy.shutDownProxy(port));
+		assertThat(proxy.shutDownProxy(port), is(true));
 	}
 	
 	public void getHar() throws IOException {
 		int port = proxy.getPort();
 		proxy.createNewHar(port, "new HAR");
-		System.out.println(proxy.getHar(port).getLog().getVersion());
+		assertThat(proxy.getHar(port).getLog().getVersion(), is(String.class));
 	}
 	
 	public void createPatternToWhitelist() {
 		int port = proxy.getPort();
 		proxy.createNewHar(port, "new HAR");
-		System.out.println(proxy.setWhitelist(port, "http://images\\.example.com\\.com/.*", 200));
+		assertThat(proxy.setWhitelist(port, "http://images\\.example.com\\.com/.*", 200), is(true));
 	}
 	
 	public void createPatternToBlacklist() {
 		int port = proxy.getPort();
 		proxy.createNewHar(port, "new HAR");
-		System.out.println(proxy.setBlacklist(port, "http://images\\.example.com\\.com/.*", 200));
+		assertThat(proxy.setBlacklist(port, "http://images\\.example.com\\.com/.*", 200), is(true));
 	}
 	
 	public void setDownstreamLimit() {
 		int port = proxy.getPort();
 		proxy.createNewHar(port, "new HAR");
-		System.out.println(proxy.setDownstreamKbps(port, 125));
+		assertThat(proxy.setDownstreamKbps(port, 125), is(true));
 	}
 	
 	public void setUpstreamLimit() {
 		int port = proxy.getPort();
 		proxy.createNewHar(port, "new HAR");
-		System.out.println(proxy.setUpstreamKbps(port, 125));
+		assertThat(proxy.setUpstreamKbps(port, 125), is(true));
 	}
 	
 	public void setLatencyLimit() {
 		int port = proxy.getPort();
 		proxy.createNewHar(port, "new HAR");
-		System.out.println(proxy.setLatency(port, 158));
+		assertThat(proxy.setLatency(port, 158), is(true));
 	}
 	
 	public void enableBandwithLimiter() {
@@ -90,16 +96,16 @@ public class browsermobAPItest {
 	public void overrideHttpHeaders() {
 		int port = proxy.getPort();
 		proxy.createNewHar(port, "new HAR");
-		proxy.setHeaders(port,
-				"{\"Proxy-Authorization\": \"Basic password\"}");
+		assertThat(proxy.setHeaders(port,
+				"{\"Proxy-Authorization\": \"Basic password\"}"), is(true));
 	}
 	
 	public void setHost() {
 		int port = proxy.getPort();
-		proxy.setHosts(port, "{\"example.com\": \"1.2.3.4\"}");
+		proxy.setHosts(port, "{\"example.com\":");
 	}
 	
 	public void setUpstreamProxy() {
-		System.out.println(proxy.getPortUsingUpstreamProxy("localhost:9090"));
+		assertThat(proxy.getPortUsingUpstreamProxy("localhost:9090"), is(Integer.class));
 	}
 }

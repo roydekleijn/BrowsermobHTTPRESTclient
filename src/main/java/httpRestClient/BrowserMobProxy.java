@@ -347,8 +347,10 @@ public class BrowserMobProxy {
 	 * @return the string
 	 */
 	public void setHosts(int port, String hosts) {
+		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+		formData.add("", hosts);
 		ClientResponse response = service.path(Integer.toString(port))
-				.path("hosts").put(ClientResponse.class, hosts);
+				.path("hosts").post(ClientResponse.class, formData);
 		System.out.println(response.getStatus());
 	}
 
