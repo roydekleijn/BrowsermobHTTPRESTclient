@@ -5,7 +5,6 @@ package httpRestClient;
 
 import java.io.IOException;
 
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.browsermob.core.har.Har;
@@ -16,7 +15,6 @@ import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.api.representation.Form;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 // TODO: Auto-generated Javadoc
@@ -27,9 +25,6 @@ public class BrowserMobProxy {
 
 	/** The service. */
 	private WebResource service;
-
-	/** The data. */
-	private String data;
 
 	private ObjectMapper mapper = new ObjectMapper();
 
