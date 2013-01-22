@@ -4,11 +4,11 @@
   <head>
     <meta charset='utf-8' />
     <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="Browsermobhttprestclient : This repository hosts a browsermob rest client written in Java" />
+    <meta name="description" content="BrowserMob HTTP REST Client : This repository hosts a browsermob rest client written in Java" />
 
     <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
-    <title>Browsermobhttprestclient</title>
+    <title>BrowserMob HTTP REST Client</title>
   </head>
 
   <body>
@@ -18,7 +18,7 @@
         <header class="inner">
           <a id="forkme_banner" href="https://github.com/roydekleijn/BrowsermobHTTPRESTclient">View on GitHub</a>
 
-          <h1 id="project_title">Browsermobhttprestclient</h1>
+          <h1 id="project_title">BrowserMob HTTP REST Client</h1>
           <h2 id="project_tagline">This repository hosts a browsermob rest client written in Java</h2>
 
             <section id="downloads">
@@ -31,19 +31,44 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        
+        <h3>Introduction</h3>
+
+<p>This class contains convenient methods to perform HTTP requests against the BrowserMob REST API (<a href="https://github.com/webmetrics/browsermob-proxy">https://github.com/webmetrics/browsermob-proxy</a>).</p>
+
+<h3>How to use it</h3>
+
+<p>This section briefly describes how you can use these methods.</p>
+
+<ol>
+<li>Add this class to your project</li>
+<li>Add static imports to classes which require this functionality </li>
+</ol><p>This method is to create a new HAR:
+<code>getProxyclient().createNewHar(getProxyport(), "New har", true, false)</code></p>
+
+<p>This method is to retrieve the HAR-entries:
+<code>getProxyclient().getHar(getProxyport()).getLog().getEntries()</code> </p>
       </section>
     </div>
 
     <!-- FOOTER  -->
     <div id="footer_wrap" class="outer">
       <footer class="inner">
-        <p class="copyright">Browsermobhttprestclient maintained by <a href="https://github.com/roydekleijn">roydekleijn</a></p>
+        <p class="copyright">BrowserMob HTTP REST Client maintained by <a href="https://github.com/roydekleijn">roydekleijn</a></p>
         <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
       </footer>
     </div>
 
-    
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-35421844-3");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
 
   </body>
 </html>
