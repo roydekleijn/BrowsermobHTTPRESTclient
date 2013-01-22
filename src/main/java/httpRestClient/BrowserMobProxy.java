@@ -1,6 +1,3 @@
-/*
- * 
- */
 package httpRestClient;
 
 import java.io.IOException;
@@ -17,7 +14,6 @@ import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class BrowserMobProxy.
  */
@@ -26,7 +22,20 @@ public class BrowserMobProxy {
 	/** The service. */
 	private WebResource service;
 
+	/** The mapper. */
 	private ObjectMapper mapper = new ObjectMapper();
+
+	/** The Constant PORT_BEGININDEX. */
+	public static final int PORT_BEGININDEX = 8;
+
+	/** The Constant PORT_ENDINDEX. */
+	public static final int PORT_ENDINDEX = 12;
+
+	/** The Constant HTTP_STATUS_CODE_200. */
+	public static final int HTTP_STATUS_CODE_200 = 200;
+
+	/** The Constant HTTP_STATUS_CODE_204. */
+	public static final int HTTP_STATUS_CODE_204 = 204;
 
 	/**
 	 * Instantiates a new browser mob proxy.
@@ -49,8 +58,9 @@ public class BrowserMobProxy {
 	 */
 	public int getPort() {
 		ClientResponse response = service.post(ClientResponse.class);
-		int port = Integer.parseInt(response.getEntity(String.class).substring(
-				8, 12));
+		String responseBody = response.getEntity(String.class);
+		int port = Integer.parseInt(responseBody.substring(PORT_BEGININDEX,
+				PORT_ENDINDEX));
 		return port;
 	}
 
@@ -66,7 +76,7 @@ public class BrowserMobProxy {
 		formData.add("port", Integer.toString(port));
 		ClientResponse response = service.post(ClientResponse.class, formData);
 		int newPort = Integer.parseInt(response.getEntity(String.class)
-				.substring(8, 12));
+				.substring(PORT_BEGININDEX, PORT_ENDINDEX));
 		return newPort;
 	}
 
@@ -81,7 +91,7 @@ public class BrowserMobProxy {
 		ClientResponse response = service.queryParam("httpProxy",
 				upStreamProxyServer).post(ClientResponse.class);
 		int port = Integer.parseInt(response.getEntity(String.class).substring(
-				8, 12));
+				PORT_BEGININDEX, PORT_ENDINDEX));
 		return port;
 	}
 
@@ -93,25 +103,31 @@ public class BrowserMobProxy {
 	 * initialPageRef - the string name of the first page ref that should be
 	 * used in the HAR. Defaults to "Page 1".
 	 * 
-	 * 
 	 * @param port
 	 *            the port
 	 * @param initialPageRef
 	 *            the initial page ref
+	 * @param captureContent
+	 *            the capture content
+	 * @param captureHeaders
+	 *            the capture headers
 	 * @return the int
 	 */
-	public boolean createNewHar(int port, String initialPageRef) {
+	public boolean createNewHar(int port, String initialPageRef,
+			boolean captureContent, boolean captureHeaders) {
 		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
 		if (!initialPageRef.isEmpty()) {
 			formData.add("initialPageRef", initialPageRef);
 		}
+		if (captureContent = true) {
+			formData.add("captureContent", Boolean.toString(captureContent));
+		}
+		if (captureHeaders = true) {
+			formData.add("captureHeaders", Boolean.toString(captureHeaders));
+		}
 		ClientResponse response = service.path(Integer.toString(port))
 				.path("har").put(ClientResponse.class, formData);
-		if (response.getStatus() == 204) {
-			return true;
-		} else {
-			return false;
-		}
+		return (response.getStatus() == HTTP_STATUS_CODE_204);
 	}
 
 	/**
@@ -136,11 +152,7 @@ public class BrowserMobProxy {
 		ClientResponse response = service.path(Integer.toString(port))
 				.path("har").path("pageRef")
 				.put(ClientResponse.class, formData);
-		if (response.getStatus() == 200) {
-			return true;
-		} else {
-			return false;
-		}
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
 	}
 
 	/**
@@ -153,11 +165,7 @@ public class BrowserMobProxy {
 	public boolean shutDownProxy(int port) {
 		ClientResponse response = service.path(Integer.toString(port)).delete(
 				ClientResponse.class);
-		if (response.getStatus() == 200) {
-			return true;
-		} else {
-			return false;
-		}
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
 	}
 
 	/**
@@ -173,7 +181,8 @@ public class BrowserMobProxy {
 	public Har getHar(int port) throws IOException {
 		ClientResponse response = service.path(Integer.toString(port))
 				.path("har").get(ClientResponse.class);
-		return mapper.readValue(response.getEntity(String.class), Har.class);
+		String responseBody = response.getEntity(String.class);
+		return mapper.readValue(responseBody, Har.class);
 	}
 
 	/**
@@ -198,11 +207,7 @@ public class BrowserMobProxy {
 		formData.add("status", Integer.toString(status));
 		ClientResponse response = service.path(Integer.toString(port))
 				.path("whitelist").put(ClientResponse.class, formData);
-		if (response.getStatus() == 200) {
-			return true;
-		} else {
-			return false;
-		}
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
 	}
 
 	/**
@@ -227,11 +232,7 @@ public class BrowserMobProxy {
 		formData.add("status", Integer.toString(status));
 		ClientResponse response = service.path(Integer.toString(port))
 				.path("blacklist").put(ClientResponse.class, formData);
-		if (response.getStatus() == 200) {
-			return true;
-		} else {
-			return false;
-		}
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
 	}
 
 	/**
@@ -249,11 +250,7 @@ public class BrowserMobProxy {
 		formData.add("downstreamKbps", Long.toString(downstreamKbps));
 		ClientResponse response = service.path(Integer.toString(port))
 				.path("limit").put(ClientResponse.class, formData);
-		if (response.getStatus() == 200) {
-			return true;
-		} else {
-			return false;
-		}
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
 	}
 
 	/**
@@ -272,11 +269,7 @@ public class BrowserMobProxy {
 		formData.add("upstreamKbps", Long.toString(upstreamKbps));
 		ClientResponse response = service.path(Integer.toString(port))
 				.path("limit").put(ClientResponse.class, formData);
-		if (response.getStatus() == 200) {
-			return true;
-		} else {
-			return false;
-		}
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
 	}
 
 	/**
@@ -297,11 +290,41 @@ public class BrowserMobProxy {
 		formData.add("latency", Long.toString(latency));
 		ClientResponse response = service.path(Integer.toString(port))
 				.path("limit").put(ClientResponse.class, formData);
-		if (response.getStatus() == 200) {
-			return true;
-		} else {
-			return false;
-		}
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	/**
+	 * Sets the limit.
+	 * 
+	 * @param port
+	 *            the port
+	 * @param enable
+	 *            the enable
+	 * @return true, if successful
+	 */
+	public boolean setLimit(int port, boolean enable) {
+		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+		formData.add("enable", Boolean.toString(enable));
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("limit").put(ClientResponse.class, formData);
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	/**
+	 * Sets the payload percentage.
+	 * 
+	 * @param port
+	 *            the port
+	 * @param payloadPercentage
+	 *            the payload percentage
+	 * @return true, if successful
+	 */
+	public boolean setPayloadPercentage(int port, long payloadPercentage) {
+		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+		formData.add("payloadPercentage", Long.toString(payloadPercentage));
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("limit").put(ClientResponse.class, formData);
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
 	}
 
 	/**
@@ -320,11 +343,7 @@ public class BrowserMobProxy {
 	public boolean setHeaders(int port, String headers) {
 		ClientResponse response = service.path(Integer.toString(port))
 				.path("headers").post(ClientResponse.class, headers);
-		if (response.getStatus() == 200) {
-			return true;
-		} else {
-			return false;
-		}
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
 	}
 
 	/**
@@ -341,12 +360,10 @@ public class BrowserMobProxy {
 	 *            the hosts
 	 * @return the string
 	 */
-	public void setHosts(int port, String hosts) {
-		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
-		formData.add("", hosts);
+	public int setHosts(int port, String hosts) {
 		ClientResponse response = service.path(Integer.toString(port))
-				.path("hosts").post(ClientResponse.class, formData);
-		System.out.println(response.getStatus());
+				.path("hosts").post(ClientResponse.class, hosts);
+		return response.getStatus();
 	}
 
 }
