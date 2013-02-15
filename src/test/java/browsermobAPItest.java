@@ -18,6 +18,13 @@ public class browsermobAPItest {
 	public void setUp() {
 		proxy = new BrowserMobProxy("http://localhost", 9090);
 	}
+	
+	public void createSecondPage() {
+		int port = proxy.getPort();
+		System.out.println(proxy.createNewHar(port, "new HAR", true, false));
+		System.out.println(proxy.startNewPage(port, "new pagereference"));
+		System.out.println(proxy.startNewPage(port, "new pagereference"));
+	}
 
 	public void createNewProxy() {
 		assertThat(proxy.getPort(), is(Integer.class));

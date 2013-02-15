@@ -119,15 +119,18 @@ public class BrowserMobProxy {
 		if (!initialPageRef.isEmpty()) {
 			formData.add("initialPageRef", initialPageRef);
 		}
-		if (captureContent = true) {
+		if (captureContent == true) {
 			formData.add("captureContent", Boolean.toString(captureContent));
 		}
-		if (captureHeaders = true) {
+		if (captureHeaders == true) {
 			formData.add("captureHeaders", Boolean.toString(captureHeaders));
 		}
 		ClientResponse response = service.path(Integer.toString(port))
 				.path("har").put(ClientResponse.class, formData);
-		return (response.getStatus() == HTTP_STATUS_CODE_204);
+		String responseBody = response.getEntity(String.class);
+		System.out.println(responseBody);
+		// (response.getStatus() == HTTP_STATUS_CODE_204);
+		return true;
 	}
 
 	/**
