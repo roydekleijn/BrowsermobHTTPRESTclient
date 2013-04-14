@@ -1,14 +1,21 @@
 package httpRestClient;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.browsermob.core.har.Har;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientHandlerException;
 import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
@@ -24,6 +31,8 @@ public class BrowserMobProxy {
 
 	/** The mapper. */
 	private ObjectMapper mapper = new ObjectMapper();
+
+	private int port;
 
 	/** The Constant PORT_BEGININDEX. */
 	public static final int PORT_BEGININDEX = 8;
@@ -51,11 +60,74 @@ public class BrowserMobProxy {
 		service = client.resource(host + ":" + port + "/proxy");
 	}
 
-	/**
-	 * Gets the port.
+	public void setPort(int port) {
+		this.port = port;
+	}
+
+	public int getPortUsingUpstreamProxy(String upStreamProxyServer) {
+		ClientResponse response = service.queryParam("httpProxy",
+				upStreamProxyServer).post(ClientResponse.class);
+		int port = Integer.parseInt(response.getEntity(String.class).substring(
+				PORT_BEGININDEX, PORT_ENDINDEX));
+		return port;
+	}
+
+	public boolean addHeader(Map<String, String> headers)
+			throws JsonGenerationException, JsonMappingException, IOException {
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("headers")
+				.post(ClientResponse.class, mapper.writeValueAsString(headers));
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	/*
 	 * 
-	 * @return the port
+	 * public boolean addRequestInterceptor() {
+	 * 
+	 * }
+	 * 
+	 * public boolean addResponseInterceptor() {
+	 * 
+	 * }
 	 */
+
+	public boolean autoBasicAuthorization(String domain, String username,
+			String password) throws JsonGenerationException,
+			JsonMappingException, UniformInterfaceException,
+			ClientHandlerException, IOException {
+		Map<String, String> auth = new HashMap<String, String>();
+		auth.put("username", username);
+		auth.put("password", password);
+
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("auth").path("basic").path(domain)
+				.post(ClientResponse.class, mapper.writeValueAsString(auth));
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	public boolean blacklistRequests(String pattern, int responseCode) {
+		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+		formData.add("regex", pattern);
+		formData.add("status", Integer.toString(responseCode));
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("blacklist").put(ClientResponse.class, formData);
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	public boolean clearDNSCache() {
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("dns").path("cache").delete(ClientResponse.class);
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	public Har getHar() throws JsonParseException, JsonMappingException,
+			IOException {
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("har").get(ClientResponse.class);
+		String responseBody = response.getEntity(String.class);
+		return mapper.readValue(responseBody, Har.class);
+	}
+
 	public int getPort() {
 		ClientResponse response = service.post(ClientResponse.class);
 		String responseBody = response.getEntity(String.class);
@@ -64,13 +136,6 @@ public class BrowserMobProxy {
 		return port;
 	}
 
-	/**
-	 * Gets the port.
-	 * 
-	 * @param port
-	 *            the port
-	 * @return the port
-	 */
 	public int getPort(int port) {
 		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
 		formData.add("port", Integer.toString(port));
@@ -80,41 +145,56 @@ public class BrowserMobProxy {
 		return newPort;
 	}
 
-	/**
-	 * Gets the port using upstream proxy.
-	 * 
-	 * @param upStreamProxyServer
-	 *            the up stream proxy server
-	 * @return the port using upstream proxy
-	 */
-	public int getPortUsingUpstreamProxy(String upStreamProxyServer) {
-		ClientResponse response = service.queryParam("httpProxy",
-				upStreamProxyServer).post(ClientResponse.class);
-		int port = Integer.parseInt(response.getEntity(String.class).substring(
-				PORT_BEGININDEX, PORT_ENDINDEX));
-		return port;
+	public boolean enableLimiter(boolean status) {
+		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+		formData.add("enable", Boolean.toString(status));
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("limit").put(ClientResponse.class, formData);
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
 	}
 
-	/**
-	 * Creates the new har. Creates a new HAR attached to the proxy and returns
-	 * the HAR content if there was a previous HAR. Supports the following
-	 * parameters:
-	 * 
-	 * initialPageRef - the string name of the first page ref that should be
-	 * used in the HAR. Defaults to "Page 1".
-	 * 
-	 * @param port
-	 *            the port
-	 * @param initialPageRef
-	 *            the initial page ref
-	 * @param captureContent
-	 *            the capture content
-	 * @param captureHeaders
-	 *            the capture headers
-	 * @return the int
-	 */
-	public boolean createNewHar(int port, String initialPageRef,
-			boolean captureContent, boolean captureHeaders) {
+	public boolean setDownstreamKbps(long downstreamKbps) {
+		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+		formData.add("downstreamKbps", Long.toString(downstreamKbps));
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("limit").put(ClientResponse.class, formData);
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	public boolean setLatency(long latency) {
+		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+		formData.add("latency", Long.toString(latency));
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("limit").put(ClientResponse.class, formData);
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	public boolean setMaxBitsPerSecondThreshold(long maxBitsPerSecond) {
+		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+		formData.add("maxBitsPerSecond", Long.toString(maxBitsPerSecond));
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("limit").put(ClientResponse.class, formData);
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	public boolean setPayloadPercentage(long payloadPercentage) {
+		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+		formData.add("payloadPercentage", Long.toString(payloadPercentage));
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("limit").put(ClientResponse.class, formData);
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	public boolean setUpstreamKbps(long upstreamKbps) {
+		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+		formData.add("upstreamKbps", Long.toString(upstreamKbps));
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("limit").put(ClientResponse.class, formData);
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	public boolean newHar(String initialPageRef, boolean captureContent,
+			boolean captureHeaders, boolean captureBinaryContent) {
 		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
 		if (!initialPageRef.isEmpty()) {
 			formData.add("initialPageRef", initialPageRef);
@@ -125,29 +205,16 @@ public class BrowserMobProxy {
 		if (captureHeaders == true) {
 			formData.add("captureHeaders", Boolean.toString(captureHeaders));
 		}
+		if (captureBinaryContent == true) {
+			formData.add("captureBinaryContent",
+					Boolean.toString(captureBinaryContent));
+		}
 		ClientResponse response = service.path(Integer.toString(port))
 				.path("har").put(ClientResponse.class, formData);
-		String responseBody = response.getEntity(String.class);
-		System.out.println(responseBody);
-		// (response.getStatus() == HTTP_STATUS_CODE_204);
-		return true;
+		return (response.getStatus() == HTTP_STATUS_CODE_204);
 	}
 
-	/**
-	 * Start new page. Starts a new page on the existing HAR. Supports the
-	 * following parameters:
-	 * 
-	 * pageRef - the string name of the first page ref that should be used in
-	 * the HAR. Defaults to "Page N" where N is the next page number.
-	 * 
-	 * 
-	 * @param port
-	 *            the port
-	 * @param pageRef
-	 *            the page ref
-	 * @return the string
-	 */
-	public boolean startNewPage(int port, String pageRef) {
+	public boolean newPage(String pageRef) {
 		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
 		if (!pageRef.isEmpty()) {
 			formData.add("pageRef", pageRef);
@@ -158,215 +225,93 @@ public class BrowserMobProxy {
 		return (response.getStatus() == HTTP_STATUS_CODE_200);
 	}
 
-	/**
-	 * Shut down proxy. Shuts down the proxy and closes the port
+	public boolean remapHost(Map<String, String> hosts)
+			throws JsonGenerationException, JsonMappingException,
+			UniformInterfaceException, ClientHandlerException, IOException {
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("hosts")
+				.post(ClientResponse.class, mapper.writeValueAsString(hosts));
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	public boolean rewriteUrl(String matchRegex, String replace) {
+		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+		formData.add("matchRegex", matchRegex);
+		formData.add("replace", replace);
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("rewrite").put(ClientResponse.class, formData);
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	public boolean setConnectionTimeout(long connectionTimeout) {
+		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+		formData.add("connectionTimeout", Long.toString(connectionTimeout));
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("timeout").put(ClientResponse.class, formData);
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	public boolean setDNSCacheTimeout(long dnsCacheTimeout) {
+		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+		formData.add("dnsCacheTimeout", Long.toString(dnsCacheTimeout));
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("timeout").put(ClientResponse.class, formData);
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	/*
+	 * public boolean setOptions(options) {
 	 * 
-	 * @param port
-	 *            the port
-	 * @return the string
+	 * }
 	 */
-	public boolean shutDownProxy(int port) {
+
+	public boolean setRequestTimeout(long requestTimeout) {
+		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+		formData.add("requestTimeout", Long.toString(requestTimeout));
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("timeout").put(ClientResponse.class, formData);
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	public boolean setRetryCount(int retrycount) {
+		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+		formData.add("retrycount", Integer.toString(retrycount));
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("retry").put(ClientResponse.class, formData);
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	public boolean setSocketOperationTimeout(long readTimeout) {
+		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+		formData.add("readTimeout", Long.toString(readTimeout));
+		ClientResponse response = service.path(Integer.toString(port))
+				.path("timeout").put(ClientResponse.class, formData);
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
+	}
+
+	public boolean stop() {
 		ClientResponse response = service.path(Integer.toString(port)).delete(
 				ClientResponse.class);
 		return (response.getStatus() == HTTP_STATUS_CODE_200);
 	}
 
-	/**
-	 * Gets the har. Returns the JSON/HAR content representing all the HTTP
-	 * traffic passed through the proxy
-	 * 
-	 * @param port
-	 *            the port
-	 * @return the har
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
-	 */
-	public Har getHar(int port) throws IOException {
+	public boolean waitForNetworkTrafficToStop(long quietPeriodInMs,
+			long timeoutInMs) {
+		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+		formData.add("quietPeriodInMs", Long.toString(quietPeriodInMs));
+		formData.add("timeoutInMs", Long.toString(timeoutInMs));
 		ClientResponse response = service.path(Integer.toString(port))
-				.path("har").get(ClientResponse.class);
-		String responseBody = response.getEntity(String.class);
-		return mapper.readValue(responseBody, Har.class);
+				.path("wait").put(ClientResponse.class, formData);
+		return (response.getStatus() == HTTP_STATUS_CODE_200);
 	}
 
-	/**
-	 * Sets the whitelist. Sets a list of URL patterns to whitelist. Takes the
-	 * following parameters:
-	 * 
-	 * regex - a comma separated list of regular expressions status - the HTTP
-	 * status code to return for URLs that do not match the whitelist
-	 * 
-	 * 
-	 * @param port
-	 *            the port
-	 * @param regex
-	 *            the regex
-	 * @param status
-	 *            the status
-	 * @return the string
-	 */
-	public boolean setWhitelist(int port, String regex, int status) {
+	public boolean whitelistRequests(String patterns, int responseCode) {
 		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
-		formData.add("regex", regex);
-		formData.add("status", Integer.toString(status));
+		formData.add("regex", patterns);
+		formData.add("status", Integer.toString(responseCode));
 		ClientResponse response = service.path(Integer.toString(port))
 				.path("whitelist").put(ClientResponse.class, formData);
 		return (response.getStatus() == HTTP_STATUS_CODE_200);
-	}
-
-	/**
-	 * Sets the blacklist. Set a URL to blacklist. Takes the following
-	 * parameters:
-	 * 
-	 * regex - the blacklist regular expression status - the HTTP status code to
-	 * return for URLs that are blacklisted
-	 * 
-	 * 
-	 * @param port
-	 *            the port
-	 * @param regex
-	 *            the regex
-	 * @param status
-	 *            the status
-	 * @return the string
-	 */
-	public boolean setBlacklist(int port, String regex, int status) {
-		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
-		formData.add("regex", regex);
-		formData.add("status", Integer.toString(status));
-		ClientResponse response = service.path(Integer.toString(port))
-				.path("blacklist").put(ClientResponse.class, formData);
-		return (response.getStatus() == HTTP_STATUS_CODE_200);
-	}
-
-	/**
-	 * Sets the downstream kbps. Sets an artificial kilobits-per-second value
-	 * for all data transfered.
-	 * 
-	 * @param port
-	 *            the port
-	 * @param downstreamKbps
-	 *            the downstream kbps
-	 * @return the string
-	 */
-	public boolean setDownstreamKbps(int port, long downstreamKbps) {
-		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
-		formData.add("downstreamKbps", Long.toString(downstreamKbps));
-		ClientResponse response = service.path(Integer.toString(port))
-				.path("limit").put(ClientResponse.class, formData);
-		return (response.getStatus() == HTTP_STATUS_CODE_200);
-	}
-
-	/**
-	 * Sets the upstream kbps. Sets an artificial kilobits-per-second value for
-	 * all data. Typically this value should be less than the downstream value
-	 * to reflect a real internet user.
-	 * 
-	 * @param port
-	 *            the port
-	 * @param upstreamKbps
-	 *            the upstream kbps
-	 * @return the string
-	 */
-	public boolean setUpstreamKbps(int port, long upstreamKbps) {
-		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
-		formData.add("upstreamKbps", Long.toString(upstreamKbps));
-		ClientResponse response = service.path(Integer.toString(port))
-				.path("limit").put(ClientResponse.class, formData);
-		return (response.getStatus() == HTTP_STATUS_CODE_200);
-	}
-
-	/**
-	 * Sets the latency. Sets an artificial latency simulation for sending one
-	 * full MTU (~1500 bytes on the internet). For high speed connections, such
-	 * as FIOS, 1ms is fine. To simulate a slower ADSL connection, 50ms might
-	 * make sense. For really slow dial-up connections, 200ms or more may be
-	 * appropriate.
-	 * 
-	 * @param port
-	 *            the port
-	 * @param latency
-	 *            the latency
-	 * @return the string
-	 */
-	public boolean setLatency(int port, long latency) {
-		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
-		formData.add("latency", Long.toString(latency));
-		ClientResponse response = service.path(Integer.toString(port))
-				.path("limit").put(ClientResponse.class, formData);
-		return (response.getStatus() == HTTP_STATUS_CODE_200);
-	}
-
-	/**
-	 * Sets the limit.
-	 * 
-	 * @param port
-	 *            the port
-	 * @param enable
-	 *            the enable
-	 * @return true, if successful
-	 */
-	public boolean setLimit(int port, boolean enable) {
-		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
-		formData.add("enable", Boolean.toString(enable));
-		ClientResponse response = service.path(Integer.toString(port))
-				.path("limit").put(ClientResponse.class, formData);
-		return (response.getStatus() == HTTP_STATUS_CODE_200);
-	}
-
-	/**
-	 * Sets the payload percentage.
-	 * 
-	 * @param port
-	 *            the port
-	 * @param payloadPercentage
-	 *            the payload percentage
-	 * @return true, if successful
-	 */
-	public boolean setPayloadPercentage(int port, long payloadPercentage) {
-		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
-		formData.add("payloadPercentage", Long.toString(payloadPercentage));
-		ClientResponse response = service.path(Integer.toString(port))
-				.path("limit").put(ClientResponse.class, formData);
-		return (response.getStatus() == HTTP_STATUS_CODE_200);
-	}
-
-	/**
-	 * Sets the headers. Set and override HTTP Request headers. For example
-	 * setting a custom User-Agent.
-	 * 
-	 * Payload data should be json encoded set of headers (not url-encoded)
-	 * 
-	 * 
-	 * @param port
-	 *            the port
-	 * @param headers
-	 *            the headers
-	 * @return the string
-	 */
-	public boolean setHeaders(int port, String headers) {
-		ClientResponse response = service.path(Integer.toString(port))
-				.path("headers").post(ClientResponse.class, headers);
-		return (response.getStatus() == HTTP_STATUS_CODE_200);
-	}
-
-	/**
-	 * Sets the hosts. Overrides normal DNS lookups and remaps the given hosts
-	 * with the associated IP address
-	 * 
-	 * Payload data should be json encoded set of name/value pairs (ex:
-	 * {"example.com": "1.2.3.4"})
-	 * 
-	 * 
-	 * @param port
-	 *            the port
-	 * @param hosts
-	 *            the hosts
-	 * @return the string
-	 */
-	public int setHosts(int port, String hosts) {
-		ClientResponse response = service.path(Integer.toString(port))
-				.path("hosts").post(ClientResponse.class, hosts);
-		return response.getStatus();
 	}
 
 }
