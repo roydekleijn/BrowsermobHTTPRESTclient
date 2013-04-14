@@ -39,16 +39,18 @@
 
 <p>This section briefly describes how you can use these methods.</p>
 
-<ol>
-<li>Add this class to your project</li>
-<li>Add static imports to classes which require this functionality </li>
-</ol><p>This method is to create a new HAR:</p>
+<p>With the following code you can initialize a new BrowserMob REST object:</p>
 
-<p><code>getProxyclient().createNewHar(getProxyport(), "New har", true, false)</code></p>
+<p><code>BrowserMobProxy proxy = new BrowserMobProxy("http://localhost", 9090);</code>
+<code>proxy.setPort(proxy.getPort());</code></p>
+
+<p>This method is to create a new HAR:</p>
+
+<p><code>proxy.newHar("newhar", false, true, false)</code></p>
 
 <p>This method is to retrieve the HAR-entries:</p>
 
-<p><code>getProxyclient().getHar(getProxyport()).getLog().getEntries()</code> </p>
+<p><code>proxy.getHar()</code> </p>
       </section>
     </div>
 
